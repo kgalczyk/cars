@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/script.js"></script>
+    <style>
+        *{
+            font-family: "Courier New", "monospace";
+            margin: 0;
+        }
+
+        body{
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        td{
+            border: 2px solid #6d6dd2;
+        }
+
+        .overlay{
+            position: absolute;
+            z-index: 10;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(128,128,128, 0.5);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .but{
+            width: 70px;
+            border: 2px solid blue;
+            border-radius: 5px;
+            margin: auto;
+        }
+
+        #edit{
+            z-index: 11;
+            width: 200px;
+            height: 100px;
+            background-color: purple;
+            text-align: center;
+        }
+
+        .color{
+            width: 100px;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+<div id="overlay"></div>
+    <h1>all cars</h1>
+    <a href="index.html">strona index</a>
+    <table id="table">
+    </table>
+    <script>
+        window.onload = postCarData;
+        async function postCarData() {
+            let json = await fetchManager.fetchAsync("", "/json");
+            renderTable(json);
+        }
+
+        function renderTable(arrayOfObjects){
+            let table = document.getElementById("table");
+            table.innerHTML = "";
+
+            console.log("dlugosc:", arrayOfObjects.length);
+            if(arrayOfObjects.length > 0) {
+                for (let i = 0; i < arrayOfObjects.length; i++) {
+                    let rowData = JSON.parse(arrayOfObjects[i]);
+
+                    // row
+                    let row = document.createElement("tr");
+                    row.id = `${i + 1}`;
+                    table.appendChild(row);
+
+                    // id
+                    let id = document.createElement("td");
+                    id.innerHTML = rowData.id;
+                    row.appendChild(id);
+
+                    // uuid
+                    let uuid = document.createElement("td");
+                    uuid.innerHTML = rowData.uuid;
+                    row.appendChild(uuid);
+
+                    // model
+                    let model = document.createElement("td");
+                    model.innerHTML = rowData.model;
+                    row.appendChild(model);
+
+                    // year
+                    let year = document.createElement("td");
+                    year.innerHTML = rowData.year;
+                    row.appendChild(year);
+
+                    // airbags
+                    let airbags = document.createElement("td");
+                    let airbagsInfo = "";
+                    for (let j = 0; j < 4; j++)
+                        airbagsInfo += `${rowData.airbags[j].description} : ${rowData.airbags[j].value}<br>`;
+                    airbags.innerHTML = airbagsInfo;
+                    row.appendChild(airbags);
+
+                    // color
+                    let color = document.createElement("td");
+                    color.classList.add("color");
+                    color.style.backgroundColor = rowData.color;
+                    row.appendChild(color);
+
+                    // delete-button
+                    let deleteButton = document.createElement("td");
+                    deleteButton.id = rowData.id;
+                    deleteButton.innerHTML = "delete car";
+                    deleteButton.onclick = deleteCar;
+                    row.appendChild(deleteButton);
+
+                    // update-button
+                    let updateButton = document.createElement("td");
+                    updateButton.id = rowData.uuid;
+                    updateButton.innerHTML = "update car";
+                    updateButton.onclick = updateCar;
+                    row.appendChild(updateButton);
+                }
+            }
+        }
+
+        async function deleteCar(){
+            console.log(this.parentNode.id);
+            const dataId = {
+                id: this.parentNode.id
+            }
+            let json = await fetchManager.fetchAsync(dataId, "/delete");
+            console.log(json);
+            await postCarData();
+        }
+
+        let updatedCar= {
+            id: "",
+            model:"",
+            year:"",
+        }
+
+        function updateCar(){
+            console.log(this.id);
+            updatedCar.id = this.parentNode.id;
+            let parentNodes = this.parentNode.childNodes;
+            // overlay na całą stronkę
+            let overlay = document.getElementById("overlay");
+            overlay.classList.add("overlay");
+            // okienko do edycji rekordu
+            overlay.innerHTML = `<div id="edit">
+                                    <input type="text" name="model2" id="model2"><br>
+                                    <select name="rok2" id="rok2">
+                                        <option>2001</option>
+                                        <option>2002</option>
+                                        <option>2003</option>
+                                        <option>2004</option>
+                                        <option>2005</option>
+                                    </select>
+                                    <div class="but" id="cancel" onclick="cancelEdition();">cancel</div>
+                                    <div class="but" id="update" onclick="updateRecord();">update</div>
+                                 </div>`;
+        }
+
+        function cancelEdition(){
+            let overlay = document.getElementById("overlay");
+            overlay.classList.remove("overlay");
+            overlay.innerHTML = "";
+        }
+
+        async function updateRecord(){
+            let modelEdited = document.getElementById("model2").value;
+            let year = document.getElementById("rok2").value;
+            updatedCar.model = modelEdited;
+            updatedCar.year = year;
+            console.log(updatedCar);
+            let array = await fetchManager.fetchAsync(updatedCar, "/update");
+            console.log(array);
+            cancelEdition();
+            renderTable(array);
+        }
+    </script>
+</body>
+</html>

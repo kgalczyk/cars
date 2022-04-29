@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/script.js"></script>
+    <style>
+        *{
+            font-family: "Courier New", "monospace";
+            margin: 0;
+        }
+
+        body{
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #table{
+            text-align: center;
+            position: relative;
+            left: 20px;
+        }
+
+        td{
+            border: 2px solid #6d6dd2;
+            width: 100px;
+        }
+
+        #but{
+            width: 70px;
+            border: 2px solid blue;
+            border-radius: 5px;
+            margin: auto;
+            position: fixed;
+            left: 800px;
+        }
+    </style>
+</head>
+<body>
+    <a href="cars.html">usuń/edytuj dane</a>
+    <a href="index.html">index</a>
+    <a href="search.html">search</a>
+    <div id="but" onclick="generateCars();">generuj auta</div>
+    <div id="cars">
+        <table id="table">
+            <tr>
+                <td>id</td>
+                <td>uuid</td>
+                <td>model</td>
+                <td>rok</td>
+                <td>poduszki</td>
+                <td>kolor</td>
+            </tr>
+        </table>
+    </div>
+
+
+    <script>
+       async function generateCars(){
+            let table = await fetchManager.fetchAsync("","/generate");
+            renderTable(table);
+       }
+
+       async function renderTable(arrayOfObjects){
+            let table = document.getElementById("table");
+           table.innerHTML = `<tr>
+                <td>id</td>
+                <td>uuid</td>
+                <td>model</td>
+                <td>rok</td>
+                <td>poduszki</td>
+                <td>kolor</td>
+            </tr>`;
+           console.log("dlugosc:", arrayOfObjects.length);
+            if(arrayOfObjects.length > 0) {
+                for (let i = 0; i < arrayOfObjects.length; i++) {
+                    let rowData = JSON.parse(arrayOfObjects[i]);
+
+                    // row
+                    let row = document.createElement("tr");
+                    row.id = `${i + 1}`;
+                    table.appendChild(row);
+
+                    // id
+                    let id = document.createElement("td");
+                    id.innerHTML = rowData.id;
+                    row.appendChild(id);
+
+                    // uuid
+                    let uuid = document.createElement("td");
+                    uuid.innerHTML = rowData.uuid;
+                    row.appendChild(uuid);
+
+                    // model
+                    let model = document.createElement("td");
+                    model.innerHTML = rowData.model;
+                    row.appendChild(model);
+
+                    // year
+                    let year = document.createElement("td");
+                    year.innerHTML = rowData.year;
+                    row.appendChild(year);
+
+                    // airbags
+                    let airbags = document.createElement("td");
+                    let airbagsInfo = "";
+                    for (let j = 0; j < 4; j++)
+                        airbagsInfo += `${rowData.airbags[j].description} : ${rowData.airbags[j].value}<br>`;
+                    airbags.innerHTML = airbagsInfo;
+                    row.appendChild(airbags);
+
+                    // color
+                    let color = document.createElement("td");
+                    console.log(rowData.color);
+                    color.style.backgroundColor = rowData.color;
+                    row.appendChild(color);
+
+                    // invoice-button
+
+                    let invoiceButton = document.createElement("td");
+                    invoiceButton.id = rowData.uuid;
+                    invoiceButton.title = rowData.id;
+                    invoiceButton.innerHTML = "invoice";
+                    invoiceButton.onclick = createInvoice;
+                    row.appendChild(invoiceButton);
+
+                    let downloadInvoiceButton = document.createElement("td");
+                    downloadInvoiceButton.title = rowData.uuid;
+                    downloadInvoiceButton.id = "invoice-" + rowData.id;
+                    row.appendChild(downloadInvoiceButton);
+                }
+            }
+        }
+
+       async function createInvoice(){
+           let fileName = this.id;
+
+           const options = {
+               method: "POST",
+               headers: { "Content-Type": "text/html"},
+               body: fileName
+           }
+           let response = await fetch("/invoice", options);
+           if (!response.ok) return response.status;
+           let res = await response.text(); // response.json
+           console.log(res);
+
+           let td = document.getElementById("invoice-" + this.title );
+           let a = document.createElement("a");
+           a.href = "/invoices/" + td.title;
+           a.innerHTML = "download";
+           td.appendChild(a);
+       }
+    </script>
+</body>
+</html>

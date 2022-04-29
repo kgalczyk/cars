@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/script.js"></script>
+    <style>
+        *{
+            font-family: "Courier New", "monospace";
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        body{
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .pic {
+            width: 300px;
+            height: 200px;
+        }
+
+        #table{
+            text-align: center;
+            position: relative;
+            left: 20px;
+        }
+
+        #table td{
+            border-top: 1px solid grey;
+            width: 150px;
+        }
+
+        #allCars{
+            margin: 2px;
+            width: 600px;
+        }
+
+        .but{
+            border: 2px solid blue;
+            border-radius: 15px;
+            width: 200px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            margin-bottom: 5px;
+            background: blue;
+            color: white;
+        }
+
+        .but:hover{
+            background: darkblue;
+            cursor: pointer;
+        }
+
+        #but{
+            width: 200px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border: 2px solid blue;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<a href="cars.html">usuń/edytuj dane</a>
+<a href="index.html">index</a>
+<a href="admin.html">admin</a>
+<br>
+<table id="allCars">
+    <tr>
+        <td>faktura za wszystkie auta:</td>
+        <td class="but" onclick="createCommunalInvoice();">generuj fakturę</td>
+        <td></td>
+    </tr>
+</table>
+
+<table id="byYearCars">
+    <tr>
+        <td>faktura - auta z danego rocznika:</td>
+        <td>
+            <select id="carYear" name="carYear"></select>
+        </td>
+        <td class="but" onclick="createByYearInvoice();">generuj fakturę</td>
+        <td></td>
+    </tr>
+</table>
+
+<table id="byPriceCars">
+    <tr>
+        <td>faktura - auta z danego zakresu cenowego:</td>
+        <td>
+            <input type="number" id="minCarPrice">
+        </td>
+        <td>
+            <input type="number" id="maxCarPrice">
+        </td>
+        <td class="but" onclick="createByPriceInvoice();">generuj fakturę</td>
+        <td></td>
+    </tr>
+</table>
+
+<div id="but" class="but" onclick="generateCars();">generuj auta</div>
+<div id="cars">
+    <table id="table">
+    </table>
+</div>
+    <script>
+        function createOptions(){
+            let select = document.getElementById("carYear");
+            for (let i = 1950; i <= 2020; i++){
+                let option = document.createElement("option");
+                option.innerHTML = i;
+                select.appendChild(option);
+            }
+        }
+
+        window.onload = createOptions;
+
+        async function createCommunalInvoice(){
+            const options = {
+                method: "POST",
+                headers: { "Content-Type": "text/html"}
+            }
+            let response = await fetch("/invoice/all", options);
+            if (!response.ok) return response.status;
+            let res = await response.text(); // response.json
+            console.log(res);
+
+            // dodanie a hrefa
+            let a = document.createElement("a");
+            a.href = "/invoices/all-Cars-Invoice";
+            a.innerHTML = "download";
+
+            // dodanie elementu do tabeli
+            document.getElementById("allCars").children[0].children[0].children[2].innerHTML = "";
+            document.getElementById("allCars").children[0].children[0].children[2].appendChild(a);
+        }
+
+        async function createByYearInvoice(){
+            const year = document.getElementById("carYear").value;
+            const options = {
+                method: "POST",
+                headers: { "Content-Type": "text/html"}
+            }
+            let response = await fetch("/invoice/" + year, options);
+            if (!response.ok) return response.status;
+            let res = await response.text(); // response.json
+            console.log(res);
+
+            // dodanie a hrefa
+            let a = document.createElement("a");
+            a.href = "/invoices/by-Year-Invoice";
+            a.innerHTML = "download";
+
+            // dodanie elementu do tabeli
+            document.getElementById("byYearCars").children[0].children[0].children[3].innerHTML = "";
+            document.getElementById("byYearCars").children[0].children[0].children[3].appendChild(a);
+        }
+
+        async function createByPriceInvoice(){
+            const minPrice = document.getElementById("minCarPrice").value;
+            const maxPrice = document.getElementById("maxCarPrice").value;
+
+            const options = {
+                method: "POST",
+                headers: { "Content-Type": "text/html"}
+            }
+            let response = await fetch("/invoice/price/"+minPrice+"/"+ maxPrice, options);
+            if (!response.ok) return response.status;
+            let res = await response.text(); // response.json
+            console.log(res);
+
+            // dodanie a hrefa
+            let a = document.createElement("a");
+            a.href = "/invoices/by-Price-Invoice";
+            a.innerHTML = "download";
+
+            // dodanie elementu do tabeli
+            document.getElementById("byPriceCars").children[0].children[0].children[4].innerHTML = "";
+            document.getElementById("byPriceCars").children[0].children[0].children[4].appendChild(a);
+        }
+
+
+        async function generateCars(){
+            let table = await fetchManager.fetchAsync("","/search");
+            renderTable(table);
+        }
+
+        async function renderTable(arrayOfObjects) {
+            let table = document.getElementById("table");
+            table.innerHTML = `<tr>
+            <td>id</td>
+            <td>model</td>
+            <td>rok</td>
+            <td>poduszki</td>
+            <td>kolor</td>
+            <td>zdjecie</td>
+            <td>cena</td>
+            <td>data</td>
+            <td>VAT</td>
+        </tr>`;
+            console.log("data:",arrayOfObjects);
+            if (arrayOfObjects.length > 0) {
+                for (let i = 0; i < arrayOfObjects.length; i++) {
+                    let rowData = JSON.parse(arrayOfObjects[i]);
+
+                    // row
+                    let row = document.createElement("tr");
+                    row.id = `${i + 1}`;
+                    table.appendChild(row);
+
+                    // id
+                    let id = document.createElement("td");
+                    id.innerHTML = rowData.id;
+                    id.title = rowData.uuid;
+                    row.appendChild(id);
+
+                    // model
+                    let model = document.createElement("td");
+                    model.innerHTML = rowData.model;
+                    row.appendChild(model);
+
+                    // year
+                    let year = document.createElement("td");
+                    year.innerHTML = rowData.year;
+                    row.appendChild(year);
+
+                    // airbags
+                    let airbags = document.createElement("td");
+                    let airbagsInfo = "";
+                    for (let j = 0; j < 4; j++)
+                        airbagsInfo += `${rowData.airbags[j].description} : ${rowData.airbags[j].value == true ? "tak" : "nie" }<br>`;
+                    airbags.innerHTML = airbagsInfo;
+                    row.appendChild(airbags);
+
+                    // color
+                    let color = document.createElement("td");
+                    console.log(rowData.color);
+                    color.style.backgroundColor = rowData.color;
+                    row.appendChild(color);
+
+                    // picture
+                    let picture = document.createElement("td");
+                    let picDiv = document.createElement("div");
+
+                    picDiv.classList.add("pic");
+                    picDiv.style.backgroundImage = 'url("img/'+rowData.model+'.jpg")';
+                    picDiv.style.backgroundSize = "cover";
+                    picDiv.style.backgroundRepeat = "no-repeat";
+                    row.appendChild(picture);
+                    picture.appendChild(picDiv);
+
+                    // cena
+                    let price = document.createElement("td");
+                    price.innerHTML = rowData.price;
+                    row.appendChild(price);
+
+                    // data
+                    let date = document.createElement("td");
+                    date.innerText = rowData.date.day+ "-" +rowData.date.month+ "-" +rowData.date.year;
+                    row.appendChild(date);
+
+                    // vat
+                    let VAT = document.createElement("td");
+                    VAT.innerHTML = rowData.VATrate;
+                    row.appendChild(VAT);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

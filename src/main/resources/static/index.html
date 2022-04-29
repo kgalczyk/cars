@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/script.js"></script>
+    <style>
+        *{
+            font-family: "Lucida Console";
+            margin: 3px;
+        }
+        #button{
+            text-align: center;
+            width: 100px;
+            height: 30px;
+            background-color: blue;
+        }
+
+        .box{
+            width: 900px;
+            height: 250px;
+            background-color: grey;
+        }
+    </style>
+</head>
+<body>
+    <h1>Spark server, post, fetch</h1>
+
+    <div class="box">
+        <div>model: </div>
+        <input type="text" name="model" id="model">
+        <div>rok: </div>
+        <select id="year" name="year">
+            <option>2001</option>
+            <option>2002</option>
+            <option>2003</option>
+            <option>2004</option>
+            <option>2005</option>
+        </select>
+        <div>poduszki powietrzne: kierowca | pasażer | tylna kanapa | boczne z tyłu</div>
+        <input type="checkbox" name="airbags" id="kierowca">
+        <input type="checkbox" name="airbags" id="pasazer">
+        <input type="checkbox" name="airbags" id="kanapa">
+        <input type="checkbox" name="airbags" id="boczne">
+        <div>kolor: </div>
+        <input type="color" name="color" id="color">
+
+        <div id="button">Dodaj</div>
+        <a href="cars.html">usuń/edytuj dane</a>
+        <a href="admin.html">admin</a>
+        <a href="search.html">search</a>
+    </div>
+    <script>
+        document.getElementById("button").onclick = send;
+
+        async function send(){
+            const carInfo = {
+                model : document.getElementById("model").value, // string
+                year : document.getElementById("year").value, // number
+                airbags : [
+                    {
+                        description : "kierowca",
+                        value : document.getElementById("kierowca").checked
+                    },
+                    {
+                        description : "pasazer",
+                        value : document.getElementById("pasazer").checked
+                    },
+                    {
+                        description : "kanapa",
+                        value : document.getElementById("kanapa").checked
+                    },
+                    {
+                        description : "boczne",
+                        value : document.getElementById("boczne").checked
+                    },
+                ],
+                color : document.getElementById("color").value // string
+            }
+            let json =  await fetchManager.fetchAsync(carInfo, "/add");
+            console.log(json);
+            alert(JSON.stringify(json, null, 5));
+        }
+    </script>
+</body>
+</html>
